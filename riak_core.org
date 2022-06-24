@@ -11,18 +11,69 @@
 - A: Availability.
 - P: Partition Tolerance.
 - We can only have two of the three at the same time.
+#+begin_notes
+- CAP Theorem, postulado fines de los 90.
+  Es discutido, nos sirve para dar una idea.
+- CAP Theorem, en un contexto de nodos distribuidos,
+  únicamente podemos asegurar 2 de estas propiedades a la vez,
+  cuando hablamos de escribir/leer de distintos nodos.
+- Consistencia:
+  - Todos los nodos contienen la misma información,
+    al actualizar uno se actualizan todos.
+- Disponibilidad:
+  - Un nodo no caído siempre devuelve una respuesta
+    razonable sin error ni timeout,
+    dentro de un periodo de tiempo razonable.
+  - Puede ser dejarte leer algo inconsistente,
+    o escribir algo inconsistente.
+- Partition Tolerance:
+  - El sistema funciona cuando ocurren
+    particiones de red (se cae la red).
+    Piensen cuántas veces anduvo mal
+    Slack en todo lo que estuvieron en Lambda.
+    Se puede caer la red,
+    alguien puede desenchufar algún cable
+    ethernet, se cae el wifi...
+    se cae US-East.
+#+end_notes
 ** Clarification
+#+begin_notes
+- Dar el ejemplo de que Slack es A+P :P
+- Para qué quiero un sistema distribuido?
+  - Para escalar verticalmente en vez
+    de horizontalmente.
+  - Horizontal:
+    - Agrandar servidor con más CPUs y RAM.
+  - Vertical:
+    - Agregar más computadoras
+  - Es más difícil escalar verticalmente Postgres,
+    por ejemplo.
 - The Theorem deals in absolute terms.
 - In practical terms, the missing attribute
   can be reached partially.
-** Illustration:
+#+end_notes
+** Visual Representation:
  [[file:CAP-Theorem-Technology.png]]
+ #+begin_notes
+- El teorema trata en términos absolutos,
+  y se le escapan ciertos casos, lo
+  menciono únicamente para guiarnos un poco
+  y a qué apunta Riak.
+- Por ejemplo, el mismo Riak tiene lo que
+  se conoce como consistencia eventual.
+- Postgres tiene un limite de (1000? conexiones por segundo)
+ #+end_notes
 ** Simplifying:
 - A distributed system should work even
   with network failures, so we need P.
 - We have two choices then:
   1. A+P: Always available, partition-tolerant.
   2. C+P: Consistent, partition-tolearnt
+#+begin_notes
+- Entonces, la cuestión queda entre: Pierdo consistencia, o disponibilidad?. Si entra una request, espero a que
+  pueda asegurarme de que todos los nodos estén de acuerdo,
+  o responder y después veo.
+#+end_notes
 * Riak Core
 #+ATTR_ORG: :width 600
 [[file:riak_CORE.png]]
@@ -30,11 +81,46 @@
 - Erlang Framework.
 - Based on the Dynamo Paper.
 - Open Source base for Riak K-V, TS and others.
+  #+begin_notes
+- Antes que nada, es un Framework de Erlang,
+  está basado en las ideas del paper de dynamo
+  de Amazon.
+  #+end_notes
 ** Dynamo:
 - NoSQL (Key-Value).
 - A+P, with eventual consistency.
 - Easily scalable.
 - Tunable AP system.
+- Latency sensitive applications, < 300 ms for 99% of requests.
+  #+begin_notes
+- Los ingenieros de Amazon, allá por 2004, se dieron
+  cuenta de que ciertas operaciones, como usar el
+  carrito de compra, no usaban todas las filas y
+  columnas de sus bases SQL. Es más, devolvían
+  información de más que no usaban.
+- Este es un escenario en el cual varias ideas
+  terminaron en Dynamo.
+- Dynamo es NoSQL, A+P con consistencia eventual
+  (implementación dependiente), fácilmente de escalar.
+- En el caso de Riak, se escala agregando Nodos virtuales.
+- Tunable AP system.
+  #+end_notes
+** Tunable AP:
+*** Eventually Replicate to 3 Nodes
+[[file:~/Documents/n_3.png]]
+#+begin_notes
+Eventually replicate a write to 3 nodes
+#+end_notes
+*** Write 2 Nodes before answering
+[[file:~/Documents/write_3.png]]
+#+begin_notes
+Write 2 nodes before answering
+#+end_notes
+*** Read 2 before answering
+[[file:~/Documents/read_example.png]]
+#+begin_notes
+Read 2 before answering
+#+end_notes
 ** Keep this in mind for now:
 #+ATTR_ORG: :width 600
 [[file:ring.png]]
@@ -50,6 +136,11 @@
 - The number determines in which part of the ring
   the key ends up.
 - Cheap to reassign keys if a node fails.
+#+begin_notes
+- Espacio fijo de claves.
+- Con esto podemos hacer otras cosas como un time series,
+  o un routing con nodos.
+#+end_notes
 *** Handoff:
 - The way in which keys are distributed among keys.
 - Each node has a portion of the ring.
@@ -57,10 +148,6 @@
 ** Let's see it again
 #+ATTR_ORG: :width 600
 [[file:ring.png]]
-** Tunable AP:
-#+ATTR_ORG: :width 600
-[[file:strategy.png]]
-
 
 * What I've been doing:
 ** Tutorial:
@@ -73,6 +160,25 @@
 - We were using a Riak Core fork.
 - rebar3 configs not working as expected.
 - Deprecated modules in OTP 25 (eg: peer vs slave).
+#+begin_notes
+- peer vs slave. Para testear varios nodos,
+  necesitábamos el módulo slave, que está
+  siendo deprecado y reemplazado por peer.
+- Estábamos usando algo así como OTP 21, y la
+  actual es 25, de hace 4 años.
+- OTP 21 y 22 ni siquiera funcionan en ARM, hasta
+  donde vi. Para probar varias versiones
+  fue útil usar docker como una terminal de Linux,
+  con plataforma x86.
+  Tiraban errores horribles de cómo no podían levantar la
+  VM.
+- Por qué estábamos usando un Fork?
+  Cuando escribieron el tutorial Basho, la
+  empresa detrás de Riak, estaba con temas
+  financieros que ponían en duda su futuro.
+  Con lo cual surgió un fork (Riak NG)
+- rebar3 es el cargo/mix/brew de Erlang.
+#+end_notes
 ** Solution:
 - Opening issues on Github.
 - Erlang slack.
