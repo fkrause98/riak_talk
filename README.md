@@ -1,1 +1,2 @@
-# riak_talk
+# Riak_talk
+Files for the Riak Core presentation.
