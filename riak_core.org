@@ -43,7 +43,7 @@
 - We can think about them 'like' running Riak Core instancies.
 - They share behaviour.
 - Distribute work between them.
-- Varios en una mismo servidor.
+- Many in a same server.
 - They share the ring.
 *** Consistency Hashing:
 - A given key is turned into a number.
